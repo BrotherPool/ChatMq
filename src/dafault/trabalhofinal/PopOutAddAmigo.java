@@ -35,8 +35,12 @@ public class PopOutAddAmigo extends JFrame {
 			public void actionPerformed(ActionEvent arg0) {
 				System.out.println(JanelaChat.amigos.contains(nomeBotao));
 				if(!JanelaChat.amigos.contains(nomeBotao)) {
-					JanelaChat.amigos.add(nomeBotao);
+					//JButton novoAmigo=JanelaChat.CriaBotaoDeAmigo(nomeBotao);
+					JanelaChat.AddAmigoNaLista(nomeBotao);
 					JanelaChat.AttAmigos();
+					/*ArrayList<String>historico=new ArrayList<String>();
+					JanelaChat.historico.add(historico);*/
+					//JanelaChat.AttAmigos();
 				}
 				dispose();
 			}
@@ -82,8 +86,13 @@ public class PopOutAddAmigo extends JFrame {
 	
 	public void CriaBotesSemNomesQueOUserJaTem() {
 		for (int i=0;i<usuarios.size();i++) {
-			//textArea.append(usuarios.get(i)+"\n");
-			if(!JanelaChat.amigos.contains(usuarios.get(i))) {
+			boolean achou=false;
+			for(int j=0;j<JanelaChat.amigos.size();j++) {
+				if(JanelaChat.amigos.get(j).GetButton().getText().compareTo(usuarios.get(i))==0) {
+					achou=true;
+				}
+			}
+			if(achou==false) {
 				panel.add(CriarBotaoUsuarios(usuarios.get(i)));
 			}
 		}

@@ -27,21 +27,23 @@ public class JanelaChat extends JFrame {
 	private JPanel contentPane;
 	private static String meuNome;
 	public static JanelaChat frame;
-	public static ArrayList<String> amigos = new ArrayList<String>(); 
+	public static BotaoComHistorico comQuemEstouConversando;
+	public static ArrayList<BotaoComHistorico> amigos = new ArrayList<BotaoComHistorico>(); 
 
 	/**
 	 * Launch the application.
 	 */
-	public static void main(String[] args) {
+	public static void main(String nome) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					frame = new JanelaChat();
+					frame = new JanelaChat(nome);
 					frame.setVisible(true);
-					meuNome="Levi";
+					meuNome=nome;
+					frame.setResizable(false);
 					//amigos.add("João");
 					//meu nome
-					frame.setTitle("Levi");
+					frame.setTitle(nome);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -51,47 +53,94 @@ public class JanelaChat extends JFrame {
 	private void MeSendTextToChat() {
 		String texto=textArea_1.getText();
 		if(texto.compareTo("")!=0) {
-			textArea.append(meuNome+": "+textArea_1.getText()+"\n");
+			AttHistorico(meuNome+": "+textArea_1.getText()+"\n");
+			AttChat(comQuemEstouConversando);
+			//textArea.append(meuNome+": "+textArea_1.getText()+"\n");
 			textArea_1.setText("");
 		}		
 	}
 	
 	private void OtherSendTextToChat(String message) {
-		textArea.append(message+"\n");
+		//a mensagem que o cara vai mandar tem que ser no formato meuNome+": "+mensagem+"\n"
+		AttHistorico(message);
+		//textArea.append(message+"\n");
 		//textArea_1.setText("");
 		
 	}
 	
 
-	public JButton CriaBotaoDeAmigo(String nomeAmigo) {
-		JButton btnNewButton = new JButton(nomeAmigo);
-		btnNewButton.setAlignmentX(CENTER_ALIGNMENT);
-		btnNewButton.setPreferredSize(new Dimension(170, 25));
-		btnNewButton.setMaximumSize(new Dimension(170, 25));
+	public BotaoComHistorico CriaBotaoDeAmigo(String nomeAmigo) {
+		BotaoComHistorico novoBotao=new BotaoComHistorico(nomeAmigo);
+		novoBotao.GetButton().setAlignmentX(CENTER_ALIGNMENT);
+		novoBotao.GetButton().addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				comQuemEstouConversando=novoBotao;
+				//System.out.println(comQuemEstouConversando);
+				AttChat(novoBotao);
+			}
+		});
+		//JButton btnNewButton = new JButton(nomeAmigo);
+		//btnNewButton.setAlignmentX(CENTER_ALIGNMENT);
+		//btnNewButton.setPreferredSize(new Dimension(170, 25));
+		//btnNewButton.setMaximumSize(new Dimension(170, 25));
 		//evento de pegar o historico do chat do cara
-		return btnNewButton;
+		return novoBotao;
 	}
 	
-	public void AddAmigoNoPanel(String nomeAmigo) {
-		panel.add(CriaBotaoDeAmigo(nomeAmigo));
+	public void AddAmigoNaLista(String nomeAmigo) {
+		BotaoComHistorico novoAmigo=CriaBotaoDeAmigo(nomeAmigo);
+		amigos.add(novoAmigo);
+		//panel.add(novoAmigo);
+		//setContentPane(contentPane);
 		
 		//panel.repaint();
 	}
+	public void AttChat(BotaoComHistorico botao) {
+		textArea.setText("");
+		ArrayList<String>historico=botao.GetHistorico();
+		for(int i=0;i<historico.size();i++) {
+			textArea.append(historico.get(i));
+		}
+	}
 	public void AttAmigos() {
+		panel.removeAll();
+		ArrayList<String>nomeDosAmigos=new ArrayList<String>();
+		for(int i=0;i<amigos.size();i++) {
+			nomeDosAmigos.add(amigos.get(i).GetButton().getText());
+		}
+		Collections.sort(nomeDosAmigos);
+		panel.add(lblNewLabel);
+		for(int i=0;i<nomeDosAmigos.size();i++) {
+			for(int j=0;j<amigos.size();j++) {
+				if(nomeDosAmigos.get(i).compareTo(amigos.get(j).GetButton().getText())==0) {
+					panel.add(amigos.get(j).GetButton());
+				}
+			}
+			
+		}
+		
+		setContentPane(contentPane);
+	}
+	public void AttHistorico(String mensagem) {
+		comQuemEstouConversando.GetHistorico().add(mensagem);
+	}
+	/*public void AttAmigos() {
 		panel.removeAll();
 		Collections.sort(amigos);
 		panel.add(lblNewLabel);
 		for(int i=0;i<amigos.size();i++) {
 			AddAmigoNoPanel(amigos.get(i));
 		}
+		
 		setContentPane(contentPane);
-	}
+	}*/
 	
 	
 	/**
 	 * Create the frame.
 	 */
-	public JanelaChat() {
+	public JanelaChat(String nome) {
+		comQuemEstouConversando=null;
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 650, 400);
 		contentPane = new JPanel();
@@ -139,7 +188,10 @@ public class JanelaChat extends JFrame {
 		JButton btnEnviar = new JButton("Enviar");
 		btnEnviar.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				MeSendTextToChat();
+				if(comQuemEstouConversando!=null) {
+					MeSendTextToChat();
+				}
+				
 			}
 		});
 		btnEnviar.setBounds(434, 306, 190, 33);
@@ -159,10 +211,36 @@ public class JanelaChat extends JFrame {
 			public void actionPerformed(ActionEvent arg0) {
 				PopOutAddAmigo novo=new PopOutAddAmigo(frame);
 				novo.setVisible(true);
+				novo.setResizable(false);
 			}
 		});
 		btnRegistrarAmigo.setBounds(434, 11, 190, 23);
 		contentPane.add(btnRegistrarAmigo);
+		
+		JButton btnOnoff = new JButton("Off");
+		btnOnoff.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				if (btnOnoff.getText().compareTo("Off")==0) {
+					btnOnoff.setText("On");
+					AttChat(comQuemEstouConversando);
+					textArea_1.setEnabled(false);
+					textArea.setEnabled(false);
+					panel.setVisible(false);
+					btnRegistrarAmigo.setEnabled(false);
+					btnEnviar.setEnabled(false);
+				}
+				else if(btnOnoff.getText().compareTo("On")==0) {
+					btnOnoff.setText("Off");
+					textArea_1.setEnabled(true);
+					textArea.setEnabled(true);
+					panel.setVisible(true);
+					btnRegistrarAmigo.setEnabled(true);
+					btnEnviar.setEnabled(true);
+				}
+			}
+		});
+		btnOnoff.setBounds(10, 11, 89, 23);
+		contentPane.add(btnOnoff);
 		
 		
 		
