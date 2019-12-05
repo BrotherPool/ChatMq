@@ -26,7 +26,7 @@ public class PopOutAddAmigo extends JFrame {
 	private JPanel contentPane;
 	private JanelaChat JanelaChat;
 	private ArrayList<String> usuarios = new ArrayList<String>(); 
-	private JButton CriarBotaoUsuarios(String nomeBotao) {
+	private JButton CriarBotaoUsuarios(final String nomeBotao) {
 		JButton btnNewButton = new JButton(nomeBotao);
 		btnNewButton.setAlignmentX(CENTER_ALIGNMENT);
 		btnNewButton.setPreferredSize(new Dimension(400, 25));

@@ -16,10 +16,12 @@ import java.awt.GridLayout;
 import java.awt.List;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.concurrent.TimeoutException;
 
 import javax.swing.BoxLayout;
 import javax.swing.SwingConstants;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.awt.event.ActionEvent;
 
 public class JanelaChat extends JFrame {
@@ -33,7 +35,7 @@ public class JanelaChat extends JFrame {
 	/**
 	 * Launch the application.
 	 */
-	public static void main(String nome) {
+	public static void main(final String nome) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
@@ -54,7 +56,7 @@ public class JanelaChat extends JFrame {
 		String texto=textArea_1.getText();
 		if(texto.compareTo("")!=0) {
 			AttHistorico(meuNome+": "+textArea_1.getText()+"\n");
-			AttChat(comQuemEstouConversando);
+			AttChat();
 			//textArea.append(meuNome+": "+textArea_1.getText()+"\n");
 			textArea_1.setText("");
 		}		
@@ -70,34 +72,51 @@ public class JanelaChat extends JFrame {
 	
 
 	public BotaoComHistorico CriaBotaoDeAmigo(String nomeAmigo) {
-		BotaoComHistorico novoBotao=new BotaoComHistorico(nomeAmigo);
+		final BotaoComHistorico novoBotao=new BotaoComHistorico(nomeAmigo);
 		novoBotao.GetButton().setAlignmentX(CENTER_ALIGNMENT);
 		novoBotao.GetButton().addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				comQuemEstouConversando=novoBotao;
 				//System.out.println(comQuemEstouConversando);
-				AttChat(novoBotao);
+				AttChat();
 			}
 		});
+		comQuemEstouConversando=novoBotao;
 		//JButton btnNewButton = new JButton(nomeAmigo);
 		//btnNewButton.setAlignmentX(CENTER_ALIGNMENT);
 		//btnNewButton.setPreferredSize(new Dimension(170, 25));
 		//btnNewButton.setMaximumSize(new Dimension(170, 25));
 		//evento de pegar o historico do chat do cara
+		
+		
 		return novoBotao;
+	}
+	public void StartRecebimento(BotaoComHistorico novoAmigo) {
+		try {
+			novoAmigo.GetConsumer().CriaConexao(frame,novoAmigo.GetButton().getText());
+			novoAmigo.GetConsumer().RecebeMensagem();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (TimeoutException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	public void AddAmigoNaLista(String nomeAmigo) {
 		BotaoComHistorico novoAmigo=CriaBotaoDeAmigo(nomeAmigo);
 		amigos.add(novoAmigo);
+		StartRecebimento(novoAmigo);
 		//panel.add(novoAmigo);
 		//setContentPane(contentPane);
 		
 		//panel.repaint();
 	}
-	public void AttChat(BotaoComHistorico botao) {
+	// tem que ter um attchat especifico
+	public void AttChat() {
 		textArea.setText("");
-		ArrayList<String>historico=botao.GetHistorico();
+		ArrayList<String>historico=comQuemEstouConversando.GetHistorico();
 		for(int i=0;i<historico.size();i++) {
 			textArea.append(historico.get(i));
 		}
@@ -123,6 +142,15 @@ public class JanelaChat extends JFrame {
 	}
 	public void AttHistorico(String mensagem) {
 		comQuemEstouConversando.GetHistorico().add(mensagem);
+	}
+	public void AttHistoricoDeUmaPessoa(String mensagem,String nomePessoa) {
+		for(int i=0;i<amigos.size();i++) {
+			if(amigos.get(i).GetButton().getText().compareTo(nomePessoa)==0) {
+				System.out.println("Chegou na parte da");
+				amigos.get(i).GetHistorico().add(mensagem);
+				break;
+			}
+		}		
 	}
 	/*public void AttAmigos() {
 		panel.removeAll();
@@ -185,7 +213,7 @@ public class JanelaChat extends JFrame {
 		//panel.add(btnNewButton2);
 		//panel.add(btnNewButton3);
 		//AddAmigoNoPanel("João");
-		JButton btnEnviar = new JButton("Enviar");
+		btnEnviar = new JButton("Enviar");
 		btnEnviar.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				if(comQuemEstouConversando!=null) {
@@ -206,7 +234,7 @@ public class JanelaChat extends JFrame {
 		//contentPane.add(textArea_1);
 		scrollPane_2.setViewportView(textArea_1);
 		
-		JButton btnRegistrarAmigo = new JButton("Add novo Amigo");
+		btnRegistrarAmigo = new JButton("Add novo Amigo");
 		btnRegistrarAmigo.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				PopOutAddAmigo novo=new PopOutAddAmigo(frame);
@@ -217,12 +245,14 @@ public class JanelaChat extends JFrame {
 		btnRegistrarAmigo.setBounds(434, 11, 190, 23);
 		contentPane.add(btnRegistrarAmigo);
 		
-		JButton btnOnoff = new JButton("Off");
+		btnOnoff = new JButton("Off");
 		btnOnoff.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				if (btnOnoff.getText().compareTo("Off")==0) {
 					btnOnoff.setText("On");
-					AttChat(comQuemEstouConversando);
+					if(comQuemEstouConversando!=null) {
+						AttChat();
+					}
 					textArea_1.setEnabled(false);
 					textArea.setEnabled(false);
 					panel.setVisible(false);
@@ -250,4 +280,7 @@ public class JanelaChat extends JFrame {
 	private JPanel panel;
 	private JScrollPane scrollPane_1;
 	private JLabel lblNewLabel;
+	private JButton btnOnoff;
+	private JButton btnEnviar;
+	private JButton btnRegistrarAmigo;
 }
