@@ -18,6 +18,7 @@ public class Consumer {
 	public static ArrayList<String>mensagensRecebidas;
 	private static JanelaChat janelaChat;
 	private static String nomeFila;
+	private static String minhaTag;
 	public static void CriaConexao(JanelaChat chat,String nomeDaFila) throws IOException, TimeoutException {
 		nomeFila=nomeDaFila;
 		janelaChat=chat;
@@ -29,25 +30,32 @@ public class Consumer {
 		
 	}
 	public static void FechaConexao() throws IOException, TimeoutException{
+		//connection.close();
 		channel.close();
+		//channel.basicCancel(minhaTag);
 		connection.close();
 	}
 	public static void ReiniciaConexao() throws IOException, TimeoutException {
 		connection= factory.newConnection();
-		channel=connection.createChannel();		
+		channel=connection.createChannel();	
 	}
 	
-	public static void RecebeMensagem() throws IOException, TimeoutException {
+	public static void ComecaServicoDeReceberMensagem() throws IOException, TimeoutException {
+		//nome da fila é quem tá recebendo
 		channel.basicConsume(nomeFila, true,new DeliverCallback() {
 			
 			public void handle(String consumerTag, Delivery message) throws IOException {
 				// TODO Auto-generated method stub
-				String m=new String(message.getBody(),"UTF-8");
-				janelaChat.AttHistoricoDeUmaPessoa(m, nomeFila);
-				janelaChat.AttChat();
+				minhaTag=consumerTag;
+				String mensagem=new String(message.getBody(),"UTF-8");
+				String[] output = mensagem.split(":");
+				//mensagem tem que ser dividida pra ver quem mandou
+				janelaChat.AttHistoricoDeUmaPessoa(mensagem, output[0]);
+				janelaChat.AttChat(output[0]);
 				//salva no histórico do cara da fila
 				//mensagensRecebidas.add(m);
-				System.out.println("Mensagem recebida: "+m);
+				System.out.println("Mensagem recebida: "+mensagem);
+				//System.out.println("Teste do split-> "+output[0]+" "+output[1]);
 				
 			}
 		}, new CancelCallback() {

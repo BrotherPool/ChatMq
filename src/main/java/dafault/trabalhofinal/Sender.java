@@ -25,10 +25,6 @@ public class Sender {
 		channel.close();
 		connection.close();
 	}
-	public static void ReiniciaConexao() throws IOException, TimeoutException {
-		connection= factory.newConnection();
-		channel=connection.createChannel();		
-	}
 	public static void MandaMensagem(String message) throws IOException, TimeoutException{
 		//String enviar=message+" Mandada em: "+LocalDateTime.now();
 		String enviar=message+"\n";
@@ -36,12 +32,18 @@ public class Sender {
 		System.out.println("Mandou a mensagem");
 	}
 	public static void main(String[] args) throws IOException, TimeoutException{
-		String nome="Coragem";
+		String nome="levi";
+		//mandei pro asd
 		CriaConexao(nome);
 		//FechaConexao();
 		//ReiniciaConexao();
-		MandaMensagem(nome+": "+"Teste");
+		//MandaMensagem("Fábio"+": "+"Olá");
+		MandaMensagem("asd"+": "+"teste");
 		FechaConexao();
+		//mandei pro coragem
+		//CriaConexao("Coragem");
+		//MandaMensagem("Fernando"+": "+"Olá");
+		//FechaConexao();
 			
 	}
 }

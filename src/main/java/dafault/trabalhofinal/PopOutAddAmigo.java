@@ -6,18 +6,26 @@ import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+
+import com.rabbitmq.http.client.Client;
+import com.rabbitmq.http.client.domain.QueueInfo;
+
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 import javax.swing.BoxLayout;
 import java.awt.FlowLayout;
+//import java.awt.List;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 
 import javax.swing.JButton;
 
@@ -62,25 +70,14 @@ public class PopOutAddAmigo extends JFrame {
 			}
 		});
 	}*/
-	public void AddAllUsers (){
-		usuarios.add("João");
-		usuarios.add("Fernando");
-		usuarios.add("José");
-		usuarios.add("Pedro");
-		usuarios.add("Fábio");
-		usuarios.add("Levi");
-		usuarios.add("Rebeca");
-		usuarios.add("Josimar");
-		usuarios.add("Josias");
-		usuarios.add("Rafael");
-		usuarios.add("Marcia");
-		usuarios.add("Judas");
-		usuarios.add("Moacir");
-		usuarios.add("Moriel");
-		usuarios.add("Coragem");
-		usuarios.add("Heitor");
-		usuarios.add("Isaias");
-		usuarios.add("Tamar");
+	public void AddAllUsers (List<QueueInfo> lista){
+		for(int i=0;i<lista.size();i++) {
+			String name=lista.get(i).getName();
+			if(JanelaChat.meuNome.compareTo(name)!=0) {
+				usuarios.add(name);
+			}
+			
+		}
 		Collections.sort(usuarios);
 	}
 	
@@ -104,7 +101,9 @@ public class PopOutAddAmigo extends JFrame {
 	public PopOutAddAmigo(JanelaChat JanelaChat) {
 		//pegar todos os usuarios pelo rmi
 		this.JanelaChat=JanelaChat;
-		AddAllUsers();
+		List<QueueInfo> nova=JanelaChat.cliente.getQueues();		
+		AddAllUsers(nova);
+		
 		//setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 450, 300);
 		contentPane = new JPanel();

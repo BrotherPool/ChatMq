@@ -8,9 +8,9 @@ import javax.swing.JButton;
 public class BotaoComHistorico {
 	private JButton botao;
 	private ArrayList<String> historico;
-	private Consumer consumer;
+	//private Consumer consumer;
 	public BotaoComHistorico(String nomeAmigo) {
-		consumer=new Consumer();
+		//consumer=new Consumer();
 		botao = new JButton(nomeAmigo);
 		//botao.setAlignmentX(CENTER_ALIGNMENT);
 		botao.setPreferredSize(new Dimension(170, 25));
@@ -23,7 +23,7 @@ public class BotaoComHistorico {
 	public ArrayList<String> GetHistorico(){
 		return historico;
 	}
-	public Consumer GetConsumer() {
+	/*public Consumer GetConsumer() {
 		return consumer;
-	}
+	}*/
 }

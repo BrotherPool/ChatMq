@@ -7,6 +7,9 @@ import java.awt.EventQueue;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+
+import com.rabbitmq.http.client.Client;
+
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JLabel;
@@ -21,14 +24,20 @@ import java.util.concurrent.TimeoutException;
 import javax.swing.BoxLayout;
 import javax.swing.SwingConstants;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.IOException;
 import java.awt.event.ActionEvent;
 
 public class JanelaChat extends JFrame {
 
 	private JPanel contentPane;
-	private static String meuNome;
+	public static String meuNome;
+	private static Consumer consumer;
+	private static Sender sender;
 	public static JanelaChat frame;
+	public static Client cliente=null;
 	public static BotaoComHistorico comQuemEstouConversando;
 	public static ArrayList<BotaoComHistorico> amigos = new ArrayList<BotaoComHistorico>(); 
 
@@ -41,8 +50,17 @@ public class JanelaChat extends JFrame {
 				try {
 					frame = new JanelaChat(nome);
 					frame.setVisible(true);
+					cliente= new Client("http://127.0.0.1:15672/api/", "guest", "guest");
 					meuNome=nome;
+					consumer=new Consumer();
+					consumer.CriaConexao(frame, meuNome);
+					consumer.ComecaServicoDeReceberMensagem();
 					frame.setResizable(false);
+					frame.addWindowListener(new WindowAdapter() {
+						public void windowClosing(WindowEvent we) {
+							cliente.deleteQueue("/", meuNome);
+						  }
+					});
 					//amigos.add("João");
 					//meu nome
 					frame.setTitle(nome);
@@ -52,11 +70,13 @@ public class JanelaChat extends JFrame {
 			}
 		});
 	}
-	private void MeSendTextToChat() {
+	private void MeSendTextToChat() throws IOException, TimeoutException {
 		String texto=textArea_1.getText();
 		if(texto.compareTo("")!=0) {
-			AttHistorico(meuNome+": "+textArea_1.getText()+"\n");
-			AttChat();
+			String mensagem=meuNome+": "+textArea_1.getText();
+			AttHistorico(mensagem+"\n");
+			AttChat(comQuemEstouConversando.GetButton().getText());
+			sender.MandaMensagem(mensagem);
 			//textArea.append(meuNome+": "+textArea_1.getText()+"\n");
 			textArea_1.setText("");
 		}		
@@ -77,11 +97,25 @@ public class JanelaChat extends JFrame {
 		novoBotao.GetButton().addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				comQuemEstouConversando=novoBotao;
+				sender=new Sender();
+				try {
+					sender.CriaConexao(comQuemEstouConversando.GetButton().getText());
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (TimeoutException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				lblNewLabel_1.setText("Chat com "+comQuemEstouConversando.GetButton().getText());
 				//System.out.println(comQuemEstouConversando);
-				AttChat();
+				AttChat(comQuemEstouConversando.GetButton().getText());
 			}
 		});
-		comQuemEstouConversando=novoBotao;
+		if(comQuemEstouConversando==null) {
+			comQuemEstouConversando=novoBotao;
+		}
+		
 		//JButton btnNewButton = new JButton(nomeAmigo);
 		//btnNewButton.setAlignmentX(CENTER_ALIGNMENT);
 		//btnNewButton.setPreferredSize(new Dimension(170, 25));
@@ -91,35 +125,25 @@ public class JanelaChat extends JFrame {
 		
 		return novoBotao;
 	}
-	public void StartRecebimento(BotaoComHistorico novoAmigo) {
-		try {
-			novoAmigo.GetConsumer().CriaConexao(frame,novoAmigo.GetButton().getText());
-			novoAmigo.GetConsumer().RecebeMensagem();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (TimeoutException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
 	
 	public void AddAmigoNaLista(String nomeAmigo) {
 		BotaoComHistorico novoAmigo=CriaBotaoDeAmigo(nomeAmigo);
 		amigos.add(novoAmigo);
-		StartRecebimento(novoAmigo);
 		//panel.add(novoAmigo);
 		//setContentPane(contentPane);
 		
 		//panel.repaint();
 	}
 	// tem que ter um attchat especifico
-	public void AttChat() {
-		textArea.setText("");
-		ArrayList<String>historico=comQuemEstouConversando.GetHistorico();
-		for(int i=0;i<historico.size();i++) {
-			textArea.append(historico.get(i));
+	public void AttChat(String quemMandou) {
+		if(comQuemEstouConversando.GetButton().getText().compareTo(quemMandou)==0) {
+			textArea.setText("");
+			ArrayList<String>historico=comQuemEstouConversando.GetHistorico();
+			for(int i=0;i<historico.size();i++) {
+				textArea.append(historico.get(i));
+			}
 		}
+		
 	}
 	public void AttAmigos() {
 		panel.removeAll();
@@ -143,14 +167,15 @@ public class JanelaChat extends JFrame {
 	public void AttHistorico(String mensagem) {
 		comQuemEstouConversando.GetHistorico().add(mensagem);
 	}
-	public void AttHistoricoDeUmaPessoa(String mensagem,String nomePessoa) {
-		for(int i=0;i<amigos.size();i++) {
-			if(amigos.get(i).GetButton().getText().compareTo(nomePessoa)==0) {
-				System.out.println("Chegou na parte da");
+	public void AttHistoricoDeUmaPessoa(String mensagem,String quemEnviou) {
+		int i=0;
+		for(i=0;i<amigos.size();i++) {
+			if(amigos.get(i).GetButton().getText().compareTo(quemEnviou)==0) {
 				amigos.get(i).GetHistorico().add(mensagem);
 				break;
 			}
-		}		
+		}	
+		System.out.println(amigos.get(i).GetHistorico());
 	}
 	/*public void AttAmigos() {
 		panel.removeAll();
@@ -195,9 +220,10 @@ public class JanelaChat extends JFrame {
 		//panel.setBounds(432, 38, 202, 178);
 		//contentPane.add(panel);
 		//panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-		JLabel lblNewLabel_1 = new JLabel("Chat");
+		lblNewLabel_1 = new JLabel("Chat");
+		lblNewLabel_1.setHorizontalAlignment(SwingConstants.CENTER);
 		lblNewLabel_1.setAlignmentX(CENTER_ALIGNMENT);
-		lblNewLabel_1.setBounds(199, 15, 29, 14);
+		lblNewLabel_1.setBounds(109, 15, 315, 14);
 		contentPane.add(lblNewLabel_1);
 		
 		lblNewLabel = new JLabel("Amigos");
@@ -217,7 +243,15 @@ public class JanelaChat extends JFrame {
 		btnEnviar.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				if(comQuemEstouConversando!=null) {
-					MeSendTextToChat();
+					try {
+						MeSendTextToChat();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (TimeoutException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
 				
 			}
@@ -244,14 +278,24 @@ public class JanelaChat extends JFrame {
 		});
 		btnRegistrarAmigo.setBounds(434, 11, 190, 23);
 		contentPane.add(btnRegistrarAmigo);
-		
 		btnOnoff = new JButton("Off");
 		btnOnoff.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				if (btnOnoff.getText().compareTo("Off")==0) {
 					btnOnoff.setText("On");
-					if(comQuemEstouConversando!=null) {
+					//função de pegar e atualizar as mensagens
+					/*if(comQuemEstouConversando!=null) {
 						AttChat();
+					}*/
+					try {
+						consumer.FechaConexao();
+						
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (TimeoutException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
 					}
 					textArea_1.setEnabled(false);
 					textArea.setEnabled(false);
@@ -261,6 +305,16 @@ public class JanelaChat extends JFrame {
 				}
 				else if(btnOnoff.getText().compareTo("On")==0) {
 					btnOnoff.setText("Off");
+					try {
+						consumer.ReiniciaConexao();
+						consumer.ComecaServicoDeReceberMensagem();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (TimeoutException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 					textArea_1.setEnabled(true);
 					textArea.setEnabled(true);
 					panel.setVisible(true);
@@ -283,4 +337,5 @@ public class JanelaChat extends JFrame {
 	private JButton btnOnoff;
 	private JButton btnEnviar;
 	private JButton btnRegistrarAmigo;
+	private JLabel lblNewLabel_1;
 }
